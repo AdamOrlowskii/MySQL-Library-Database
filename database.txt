@@ -1,0 +1,167 @@
+CREATE DATABASE LIB;
+USE LIB;
+
+
+CREATE TABLE WORKERS (
+    ID INT(10) PRIMARY KEY,
+    FIRST_NAME VARCHAR(20),
+    LAST_NAME VARCHAR(20),
+    SALARY FLOAT(10, 2),
+    PESEL VARCHAR(11) UNIQUE,
+    PHONE_NUMBER VARCHAR(9),
+    E_MAIL VARCHAR(100),
+    MANAGER_ID INT(10) NULL,
+    POSITION_ID INT(10),
+    PASSWORD VARCHAR(20)
+);
+
+CREATE TABLE POSITIONS (
+    ID INT(10) PRIMARY KEY,
+    NAME VARCHAR(10)
+);
+
+CREATE TABLE BOOKS_CATALOG (
+	ID INT(10) PRIMARY KEY,
+    BOOK_ID INT(10),
+    BOOK_STATE VARCHAR(15)
+);
+
+CREATE TABLE CLIENTS (
+    ID INT(10) PRIMARY KEY,
+    FIRST_NAME VARCHAR(20),
+    LAST_NAME VARCHAR(20),
+    E_MAIL VARCHAR(100),
+    PENALTY FLOAT(10, 2),
+    CARD_NUMBER VARCHAR(7)
+);
+
+CREATE TABLE BORROWS (
+    ID INT(10) PRIMARY KEY,
+    CLIENT_ID INT(10),
+    BOOKS_CATALOG_ID INT(10),
+    BORROW_DATE DATE,
+    DATE_DUE DATE,
+    IF_FINISHED BOOL
+);
+
+CREATE TABLE RETURNS (
+    ID INT(10) PRIMARY KEY,
+    BORROW_ID INT(10),
+    RETURN_DATE DATE,
+    PENALTY FLOAT(10, 2) NULL
+);
+
+CREATE TABLE AUTHORS (
+    ID INT(10) PRIMARY KEY,
+    FIRST_NAME VARCHAR(20),
+    LAST_NAME VARCHAR(20)
+);
+
+CREATE TABLE GENRES (
+    ID INT(10) PRIMARY KEY,
+    NAME VARCHAR(50)
+);
+
+CREATE TABLE BOOKS (
+    ID INT(10) PRIMARY KEY,
+    TITLE VARCHAR(100) UNIQUE,
+    AUTHOR_ID INT(10),
+    GENRE_ID INT(10),
+    ISBN VARCHAR(13) UNIQUE
+);
+
+ALTER TABLE LIB.WORKERS
+    ADD CONSTRAINT FK_WORKERS_POSITIONS
+    FOREIGN KEY (POSITION_ID) REFERENCES LIB.POSITIONS(ID);
+
+ALTER TABLE LIB.BORROWS
+    ADD CONSTRAINT FK_BORROWS_CLIENT
+    FOREIGN KEY (CLIENT_ID) REFERENCES LIB.CLIENTS(ID),
+    ADD CONSTRAINT FK_BORROWS_BOOKS_CATALOG
+    FOREIGN KEY (BOOKS_CATALOG_ID) REFERENCES LIB.BOOKS_CATALOG(ID);
+
+ALTER TABLE LIB.RETURNS
+    ADD CONSTRAINT FK_RETURNS_BORROWS
+    FOREIGN KEY (BORROW_ID) REFERENCES LIB.BORROWS(ID);
+
+ALTER TABLE LIB.BOOKS
+    ADD CONSTRAINT FK_BOOKS_AUTHORS
+    FOREIGN KEY (AUTHOR_ID) REFERENCES LIB.AUTHORS(ID),
+    ADD CONSTRAINT FK_BOOKS_Gatunek
+    FOREIGN KEY (GENRE_ID) REFERENCES LIB.GENRES(ID);
+   
+alter table LIB.BOOKS_CATALOG 
+	add constraint FK_BOOKS_CATALOG_BOOKS
+	foreign key (BOOK_ID) references LIB.BOOKS(ID);
+
+
+
+alter table LIB.WORKERS
+	add constraint FK_WORKERS_POSITIONS_BEHAVIOUR
+	foreign key (POSITION_ID) references LIB.POSITIONS(ID)
+	on delete set null on update cascade;
+	
+alter table LIB.BORROWS
+	add constraint FK_BORROWS_CLIENT_BEHAVIOUR
+	foreign key (CLIENT_ID) references LIB.CLIENTS(ID)
+	on delete cascade on update cascade,
+	add constraint FK_BORROWS_BOOKS_CATALOG_BEHAVIOUR
+	foreign key (BOOKS_CATALOG_ID) references LIB.BOOKS_CATALOG(ID)
+	on delete set null on update cascade;
+	
+alter table LIB.RETURNS
+	add constraint FK_RETURNS_BORROWS_BEHAVIOUR
+	foreign key (BORROW_ID) references LIB.BORROWS(ID)
+	on delete cascade on update cascade;
+
+alter table LIB.BOOKS
+	add constraint FK_BOOKS_AUTHORS_BEHAVIOUR
+	foreign key (AUTHOR_ID) references LIB.AUTHORS(ID)
+	on delete set null on update cascade,
+	add constraint FK_BOOKS_Gatunek_BEHAVIOUR
+	foreign key (GENRE_ID) references LIB.GENRES(ID)
+	on delete set null on update cascade;
+
+alter table LIB.BOOKS_CATALOG
+	add constraint FK_BOOKS_CATALOG_BOOKS_BEHAVIOUR
+	foreign key (BOOK_ID) references LIB.BOOKS(ID)
+	on delete cascade on update cascade;
+
+
+create user 'CLIENT'@'%' identified with caching_sha2_PASSWORD by 'CLIENT_PASSWORD';
+create user 'WORKER'@'%' identified with caching_sha2_PASSWORD by 'WORKERS_PASSWORD';
+create user 'DIRECTOR'@'%' identified with caching_sha2_PASSWORD by 'DIRECTOR_PASSWORD';
+
+grant select on LIB.AUTHORS to 'CLIENT'@'%';
+grant select on LIB.GENRES to 'CLIENT'@'%';
+grant select on LIB.BOOKS_CATALOG to 'CLIENT'@'%';
+grant select on LIB.BOOKS to 'CLIENT'@'%';
+grant select, insert on LIB.CLIENTS to 'CLIENT'@'%';
+grant select on LIB.BORROWS to 'CLIENT'@'%';
+grant select on LIB.RETURNS to 'CLIENT'@'%';
+
+grant select, insert, delete on LIB.AUTHORS to 'WORKER'@'%', 'DIRECTOR'@'%';
+grant select, insert, delete on LIB.GENRES to 'WORKER'@'%', 'DIRECTOR'@'%';
+grant select, insert, delete, update on LIB.BOOKS_CATALOG to 'WORKER'@'%', 'DIRECTOR'@'%';
+grant select, insert, delete, update on LIB.CLIENTS to 'WORKER'@'%', 'DIRECTOR'@'%';
+grant select, insert, delete on LIB.BOOKS to 'WORKER'@'%', 'DIRECTOR'@'%';
+grant select on LIB.WORKERS to 'WORKER'@'%', 'DIRECTOR'@'%';
+grant select, insert, update on LIB.BORROWS to 'WORKER'@'%', 'DIRECTOR'@'%';
+grant select, insert on LIB.RETURNS to 'WORKER'@'%', 'DIRECTOR'@'%';
+
+grant insert, delete, update on LIB.WORKERS to 'DIRECTOR'@'%';
+grant select, insert, delete on LIB.POSITIONS to 'DIRECTOR'@'%';
+grant select on LIB.POSITIONS to 'WORKER'@'%';
+
+
+flush privileges;
+
+
+insert into LIB.POSITIONS (ID,NAME)
+values (0, "Worker");
+
+insert into LIB.POSITIONS (ID,NAME)
+values (1, "Director");
+
+insert into LIB.WORKERS (ID, FIRST_NAME, LAST_NAME, SALARY, PESEL, PHONE_NUMBER, E_MAIL, MANAGER_ID, POSITION_ID, PASSWORD)
+values (0, "123", "123", 0, "01134117491", "123456789", "123", null, 1, "123");
